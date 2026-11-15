@@ -1,6 +1,7 @@
 const storageKey = 'ppnckh-giong-doc-v1';
 const builtIn = 'built-in';
 const googleLabel = 'Google Tiếng Việt';
+const audioVersion = new URL(import.meta.url).search;
 
 function isGoogleVoice(voice) {
   return /\bGoogle\b/i.test(voice.name) || /\bcom\.google\.android\.tts\b/i.test(voice.voiceURI);
@@ -74,7 +75,9 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
   }
 
   function playAudio(playback, file) {
-    const audio = new Audio(new URL('./audio/' + file + '.mp3', import.meta.url));
+    const source = new URL('./audio/' + file + '.mp3', import.meta.url);
+    source.search = audioVersion;
+    const audio = new Audio(source);
     playback.audio = audio;
     audio.playbackRate = Number(rate.value);
     function reportFailure() {

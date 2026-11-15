@@ -1,9 +1,10 @@
 import { questions } from './questions.js';
-import { createSpeechPlayer } from './speech.js?v=google-voice';
+import { createSpeechPlayer } from './speech.js?v=vi-letter-names';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
 const byId = new Map(questions.map(question => [question.id, question]));
 const labels = 'ABCD';
+const spokenLabels = ['a', 'bê', 'xê', 'đê'];
 const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map(node => [node.id, node]));
 const speech = createSpeechPlayer({
   button: ui['read-question'],
@@ -16,7 +17,7 @@ const speech = createSpeechPlayer({
 
 function readQuestion() {
   const question = byId.get(session.order[session.cursor]);
-  const options = question.options.map((text, index) => 'Phương án ' + labels[index] + '. ' + text);
+  const options = question.options.map((text, index) => 'Phương án ' + spokenLabels[index] + '. ' + text);
   speech.play([question.question, ...options], 'cau-' + question.id);
 }
 
@@ -232,7 +233,7 @@ ui.choices.addEventListener('click', event => {
   session.graded[id] = Number(choice.dataset.answer);
   update();
   if (session.graded[id] !== question.answer) {
-    const letter = labels[question.answer];
+    const letter = spokenLabels[question.answer];
     speech.play(['Đáp án đúng là ' + letter + '. ' + question.options[question.answer]], 'dap-an-' + id);
   } else {
     speech.stop();
