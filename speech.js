@@ -1,3 +1,5 @@
+import { splitSpeech } from './speech-text.js?v=bilingual';
+
 const storageKey = 'ppnckh-giong-doc-v1';
 const builtIn = 'built-in';
 const googleLabel = 'Google Tiếng Việt';
@@ -19,6 +21,7 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
   const preferences = loadPreferences();
   const synthesis = window.speechSynthesis;
   let voices = new Map();
+  let englishVoices = [];
   let active = null;
   let preferredVoice = preferences.voice ?? builtIn;
   if ([...rate.options].some(option => option.value === preferences.rate)) rate.value = preferences.rate;
@@ -30,7 +33,9 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
   }
 
   function refreshVoices() {
-    const vietnamese = synthesis?.getVoices().filter(item => /^vi(?:[-_]|$)/i.test(item.lang)) ?? [];
+    const installedVoices = synthesis?.getVoices() ?? [];
+    const vietnamese = installedVoices.filter(item => /^vi(?:[-_]|$)/i.test(item.lang));
+    englishVoices = installedVoices.filter(item => /^en(?:[-_]|$)/i.test(item.lang));
     voices = new Map(vietnamese.map(item => [item.voiceURI, item]));
     voice.replaceChildren(new Option('Tiếng Việt có sẵn', builtIn));
     const googleVoices = [...voices.values()].filter(isGoogleVoice);
@@ -101,16 +106,26 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
       playAudio(playback, file);
       return;
     }
+    const parts = texts.flatMap(splitSpeech);
+    const englishVoice = (isGoogleVoice(nativeVoice) && englishVoices.find(isGoogleVoice))
+      || englishVoices.find(item => /^en[-_]US$/i.test(item.lang))
+      || englishVoices[0];
+    if (!englishVoice && parts.some(part => part.language === 'en')) {
+      playAudio(playback, file);
+      return;
+    }
     function speakPart(index) {
       if (active !== playback) return;
-      if (index === texts.length) {
+      if (index === parts.length) {
         finish(playback);
         return;
       }
-      const line = new SpeechSynthesisUtterance(texts[index]);
+      const part = parts[index];
+      const partVoice = part.language === 'en' ? englishVoice : nativeVoice;
+      const line = new SpeechSynthesisUtterance(part.text);
       playback.utterance = line;
-      line.lang = nativeVoice.lang;
-      line.voice = nativeVoice;
+      line.lang = partVoice.lang;
+      line.voice = partVoice;
       line.rate = Number(rate.value);
       line.onend = () => speakPart(index + 1);
       line.onerror = () => {
