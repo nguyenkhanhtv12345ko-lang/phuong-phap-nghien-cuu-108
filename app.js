@@ -43,28 +43,38 @@ function newSession(practice = buildPractice('all', 'original')) {
   return { ...practice, cursor: 0, selected: {}, graded: {}, flagged: [], view: 'quiz' };
 }
 
+function restoreSession(saved) {
+  if (!Array.isArray(saved?.order) || !saved.order.length ||
+      new Set(saved.order).size !== saved.order.length || !saved.order.every(id => byId.has(id))) {
+    return null;
+  }
+  const cleanAnswers = answers => Object.fromEntries(saved.order.flatMap(id => (
+    Number.isInteger(answers?.[id]) && answers[id] >= 0 && answers[id] < 4 ? [[id, answers[id]]] : []
+  )));
+  const fallbackMode = saved.order.some((id, index) => index > 0 && id < saved.order[index - 1]) ? 'questions' : 'original';
+  return {
+    order: saved.order,
+    setId: sets.some(set => set.id === saved.setId) ? saved.setId : 'all',
+    modeId: modes.some(mode => mode.id === saved.modeId) ? saved.modeId : fallbackMode,
+    choiceOrders: savedChoiceOrders(saved.choiceOrders, saved.order),
+    cursor: Number.isInteger(saved.cursor) && saved.cursor >= 0 && saved.cursor < saved.order.length ? saved.cursor : 0,
+    selected: cleanAnswers(saved.selected),
+    graded: cleanAnswers(saved.graded),
+    flagged: Array.isArray(saved.flagged) ? saved.flagged.filter(id => saved.order.includes(id)) : [],
+    view: saved.view === 'results' ? 'results' : 'quiz',
+  };
+}
+
 function readSession() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey));
-    if (!saved || !Array.isArray(saved.order) || !saved.order.length ||
-      new Set(saved.order).size !== saved.order.length || !saved.order.every(id => byId.has(id))) {
-      return newSession();
+    const restored = restoreSession(saved);
+    if (!restored) return newSession();
+    const resume = restoreSession(saved.resume);
+    if (resume && restored.order.every(id => resume.order.includes(id))) {
+      restored.resume = resume;
     }
-    const cleanAnswers = answers => Object.fromEntries(saved.order.flatMap(id => (
-      Number.isInteger(answers?.[id]) && answers[id] >= 0 && answers[id] < 4 ? [[id, answers[id]]] : []
-    )));
-    const fallbackMode = saved.order.some((id, index) => index > 0 && id < saved.order[index - 1]) ? 'questions' : 'original';
-    return {
-      order: saved.order,
-      setId: sets.some(set => set.id === saved.setId) ? saved.setId : 'all',
-      modeId: modes.some(mode => mode.id === saved.modeId) ? saved.modeId : fallbackMode,
-      choiceOrders: savedChoiceOrders(saved.choiceOrders, saved.order),
-      cursor: Number.isInteger(saved.cursor) && saved.cursor >= 0 && saved.cursor < saved.order.length ? saved.cursor : 0,
-      selected: cleanAnswers(saved.selected),
-      graded: cleanAnswers(saved.graded),
-      flagged: Array.isArray(saved.flagged) ? saved.flagged.filter(id => saved.order.includes(id)) : [],
-      view: saved.view === 'results' ? 'results' : 'quiz',
-    };
+    return restored;
   } catch {
     return newSession();
   }
@@ -87,6 +97,44 @@ function persist() {
 function statusOf(id) {
   if (!Object.hasOwn(session.graded, id)) return 'open';
   return session.graded[id] === byId.get(id).answer ? 'right' : 'wrong';
+}
+
+function wrongQuestions() {
+  return session.order.filter(id => statusOf(id) === 'wrong');
+}
+
+function originalAttempt() {
+  if (!session.resume) return session;
+  return {
+    ...session.resume,
+    graded: {...session.resume.graded, ...session.graded},
+    flagged: [...session.resume.flagged.filter(id => !session.order.includes(id)), ...session.flagged],
+  };
+}
+
+function retryWrong() {
+  const order = wrongQuestions();
+  if (!order.length) return;
+  const resume = originalAttempt();
+  session = newSession({
+    setId: session.setId,
+    modeId: session.modeId,
+    order,
+    choiceOrders: session.choiceOrders,
+    resume,
+  });
+  session.flagged = resume.flagged.filter(id => order.includes(id));
+  ui.filter.value = 'all';
+  update(true);
+  readAutomatically();
+}
+
+function resumePractice() {
+  if (!session.resume) return;
+  speech.stop();
+  session = originalAttempt();
+  ui.filter.value = 'all';
+  update(true);
 }
 
 function renderChoices(question) {
@@ -190,18 +238,15 @@ function renderResults(counts) {
     const retry = document.createElement('button');
     retry.className = 'button primary';
     retry.textContent = 'Luyện lại ' + counts.wrong + ' câu sai';
-    retry.onclick = () => {
-      session = newSession({
-        setId: session.setId,
-        modeId: session.modeId,
-        order: session.order.filter(id => statusOf(id) === 'wrong'),
-        choiceOrders: session.choiceOrders,
-      });
-      ui.filter.value = 'all';
-      update(true);
-      readAutomatically();
-    };
+    retry.onclick = retryWrong;
     actions.append(retry);
+  }
+  if (session.resume) {
+    const resume = document.createElement('button');
+    resume.className = 'button secondary';
+    resume.textContent = 'Về đề đang làm';
+    resume.onclick = resumePractice;
+    actions.append(resume);
   }
   ui.results.replaceChildren(title, score, summary, actions);
 }
@@ -210,7 +255,7 @@ function render(focus = false) {
   const counts = {right: 0, wrong: 0, open: 0};
   session.order.forEach(id => counts[statusOf(id)]++);
   const set = sets.find(item => item.id === session.setId);
-  const isReview = session.order.length !== set.end - set.start + 1;
+  const isReview = session.resume || session.order.length !== set.end - set.start + 1;
   ui['current-practice'].textContent = isReview
     ? 'Ôn ' + session.order.length + ' câu sai'
     : set.label + (set.id === 'all' ? '' : ' · 27 câu');
@@ -348,14 +393,21 @@ function choosePractice() {
   speech.stop();
   setSelect.value = session.setId;
   modeSelect.value = session.modeId;
-  ui['reset-warning'].hidden = !Object.keys(session.graded).length && !session.flagged.length;
+  const wrongCount = wrongQuestions().length;
+  ui['retry-wrong'].textContent = wrongCount ? 'Làm lại ' + wrongCount + ' câu sai' : 'Làm lại câu sai';
+  ui['retry-wrong'].disabled = wrongCount === 0;
+  ui['resume-practice'].hidden = !session.resume;
+  ui['reset-warning'].hidden = !session.resume && !Object.keys(session.graded).length && !session.flagged.length;
   ui['reset-dialog'].returnValue = '';
   ui['reset-dialog'].showModal();
 }
 ui.reset.onclick = choosePractice;
 ui['choose-practice'].onclick = choosePractice;
 ui['reset-dialog'].addEventListener('close', () => {
-  if (ui['reset-dialog'].returnValue !== 'start') return;
+  const action = ui['reset-dialog'].returnValue;
+  if (action === 'retry') return retryWrong();
+  if (action === 'resume') return resumePractice();
+  if (action !== 'start') return;
   session = newSession(buildPractice(setSelect.value, modeSelect.value));
   ui.filter.value = 'all';
   update(true);

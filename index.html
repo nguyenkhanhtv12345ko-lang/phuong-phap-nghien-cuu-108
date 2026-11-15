@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=practice-menu">
-  <script type="module" src="./app.js?v=practice-menu"></script>
+  <link rel="stylesheet" href="./style.css?v=retry-menu">
+  <script type="module" src="./app.js?v=retry-menu"></script>
 </head>
 <body>
   <header class="top">
@@ -101,6 +101,10 @@
         <select id="practice-set"></select>
         <label for="practice-mode">Thứ tự câu hỏi và phương án</label>
         <select id="practice-mode"></select>
+      </div>
+      <div class="review-actions">
+        <button class="button secondary" id="retry-wrong" value="retry" disabled>Làm lại câu sai</button>
+        <button class="button secondary" id="resume-practice" value="resume" hidden>Về đề đang làm</button>
       </div>
       <p id="reset-warning" hidden>Bắt đầu đề sẽ đặt lại tiến độ của lượt hiện tại.</p>
       <div class="dialog-actions">
