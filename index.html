@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4fa">
+  <meta name="description" content="Luyện tập 108 câu trắc nghiệm phương pháp nghiên cứu khoa học.">
+  <title>Ôn tập phương pháp nghiên cứu khoa học</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✓</span> Góc ôn tập</div>
+      <button class="button quiet" id="reset" type="button">Lượt luyện mới</button>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="intro">
+      <p class="mode" id="mode">ĐỀ LUYỆN TẬP</p>
+      <h1>Phương pháp<br class="desktop-break"> nghiên cứu khoa học</h1>
+      <p id="intro-detail">108 câu trắc nghiệm · Tiến độ lưu trên trình duyệt</p>
+    </section>
+    <div class="layout">
+      <section class="card" id="question-card" aria-label="Câu hỏi hiện tại">
+        <div class="card-top">
+          <p class="position" id="position"></p>
+          <button type="button" class="button bookmark" id="bookmark" aria-pressed="false">☆ Đánh dấu</button>
+        </div>
+        <h2 id="question" tabindex="-1"></h2>
+        <form id="answer-form">
+          <fieldset id="choices"><legend class="sr-only">Chọn một phương án</legend></fieldset>
+          <p id="feedback" class="feedback" role="status" hidden></p>
+          <div class="actions">
+            <button type="button" class="button secondary" id="previous">← Câu trước</button>
+            <button type="submit" class="button primary" id="check">Kiểm tra đáp án</button>
+            <button type="button" class="button secondary" id="next">Câu sau →</button>
+          </div>
+        </form>
+      </section>
+      <section class="card results" id="results" aria-labelledby="result-title" hidden></section>
+      <aside class="sidebar" aria-labelledby="progress-title">
+        <div class="sidebar-top"><h2 id="progress-title">Tiến độ</h2><span id="progress-value"></span></div>
+        <progress id="progress" aria-label="Số câu đã chấm" value="0" max="108"></progress>
+        <div class="stats">
+          <div><strong id="correct">0</strong><span>Đúng</span></div>
+          <div><strong id="incorrect">0</strong><span>Sai</span></div>
+          <div><strong id="remaining">108</strong><span>Chưa chấm</span></div>
+        </div>
+        <div class="map-heading"><h3>Danh sách câu</h3><label><span class="sr-only">Lọc danh sách câu</span><select id="filter"><option value="all">Tất cả</option><option value="open">Chưa chấm</option><option value="wrong">Câu sai</option><option value="flagged">Đã đánh dấu</option></select></label></div>
+        <nav id="map" aria-label="Đi đến câu hỏi"></nav>
+        <p id="map-empty" hidden>Không có câu nào trong bộ lọc này.</p>
+        <button class="button finish" type="button" id="finish">Xem kết quả</button>
+      </aside>
+    </div>
+    <noscript>Vui lòng bật JavaScript để luyện tập.</noscript>
+  </main>
+  <dialog id="reset-dialog" aria-labelledby="reset-title">
+    <h2 id="reset-title">Bắt đầu lượt luyện mới</h2>
+    <p>Tiến độ của lượt hiện tại sẽ được đặt lại.</p>
+    <form method="dialog">
+      <label class="toggle"><input type="checkbox" id="shuffle"> Đảo thứ tự câu hỏi</label>
+      <div class="dialog-actions">
+        <button class="button secondary" value="cancel">Hủy</button>
+        <button class="button primary" value="start">Bắt đầu</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
