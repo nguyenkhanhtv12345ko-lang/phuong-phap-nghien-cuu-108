@@ -9,14 +9,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=compact-layout">
-  <script type="module" src="./app.js?v=compact-layout"></script>
+  <link rel="stylesheet" href="./style.css?v=practice-menu">
+  <script type="module" src="./app.js?v=practice-menu"></script>
 </head>
 <body>
   <header class="top">
     <div class="top-inner">
-      <div class="brand"><span class="brand-icon" aria-hidden="true">✓</span> Góc ôn tập</div>
-      <button class="button quiet" id="reset" type="button">Lượt luyện mới</button>
+      <button class="button quiet practice-menu" id="choose-practice" type="button" aria-haspopup="dialog">
+        <span aria-hidden="true">☰</span> Chọn đề
+      </button>
+      <span class="current-practice" id="current-practice"></span>
+      <button class="button quiet" id="reset" type="button" aria-haspopup="dialog">Lượt luyện mới</button>
     </div>
   </header>
   <main class="shell">
@@ -91,10 +94,15 @@
     <noscript>Vui lòng bật JavaScript để luyện tập.</noscript>
   </main>
   <dialog id="reset-dialog" aria-labelledby="reset-title">
-    <h2 id="reset-title">Bắt đầu lượt luyện mới</h2>
-    <p>Tiến độ của lượt hiện tại sẽ được đặt lại.</p>
+    <h2 id="reset-title">Chọn đề luyện tập</h2>
     <form method="dialog">
-      <label class="toggle"><input type="checkbox" id="shuffle"> Đảo thứ tự câu hỏi</label>
+      <div class="practice-fields">
+        <label for="practice-set">Bộ câu hỏi</label>
+        <select id="practice-set"></select>
+        <label for="practice-mode">Thứ tự câu hỏi và phương án</label>
+        <select id="practice-mode"></select>
+      </div>
+      <p id="reset-warning" hidden>Bắt đầu đề sẽ đặt lại tiến độ của lượt hiện tại.</p>
       <div class="dialog-actions">
         <button class="button secondary" value="cancel">Hủy</button>
         <button class="button primary" value="start">Bắt đầu</button>

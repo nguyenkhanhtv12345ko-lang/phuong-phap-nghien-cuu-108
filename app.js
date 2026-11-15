@@ -1,10 +1,10 @@
 import { questions } from './questions.js';
-import { createSpeechPlayer } from './speech.js?v=question-only';
+import { createSpeechPlayer } from './speech.js?v=practice-menu';
 import { answerLine, questionLines } from './speech-text.js?v=bilingual';
+import { buildPractice, choiceRecording, labels, modes, originalChoices, presentQuestion, savedChoiceOrders, sets } from './practice.js?v=practice-menu';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
 const byId = new Map(questions.map(question => [question.id, question]));
-const labels = 'ABCD';
 const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map(node => [node.id, node]));
 const speech = createSpeechPlayer({
   button: ui['read-question'],
@@ -19,12 +19,19 @@ const speech = createSpeechPlayer({
 });
 
 function readQuestion() {
-  const question = byId.get(session.order[session.cursor]);
-  if (ui['speech-options'].checked) {
-    speech.play(questionLines(question), 'cau-' + question.id);
-  } else {
+  const id = session.order[session.cursor];
+  const question = byId.get(id);
+  if (!ui['speech-options'].checked) {
     speech.play([question.question], 'de-bai-' + question.id);
+    return;
   }
+  const order = choiceOrder(id);
+  const shown = presentQuestion(question, order);
+  const recordings = order === originalChoices ? undefined : [
+    'de-bai-' + id,
+    ...order.flatMap((_, position) => ['nhan-' + position, choiceRecording(shown, position, order)]),
+  ];
+  speech.play(questionLines(shown), 'cau-' + id, recordings);
 }
 
 function readAutomatically() {
@@ -32,8 +39,8 @@ function readAutomatically() {
   else speech.stop();
 }
 
-function newSession(order = [...byId.keys()]) {
-  return { order, cursor: 0, selected: {}, graded: {}, flagged: [], view: 'quiz' };
+function newSession(practice = buildPractice('all', 'original')) {
+  return { ...practice, cursor: 0, selected: {}, graded: {}, flagged: [], view: 'quiz' };
 }
 
 function readSession() {
@@ -46,8 +53,12 @@ function readSession() {
     const cleanAnswers = answers => Object.fromEntries(saved.order.flatMap(id => (
       Number.isInteger(answers?.[id]) && answers[id] >= 0 && answers[id] < 4 ? [[id, answers[id]]] : []
     )));
+    const fallbackMode = saved.order.some((id, index) => index > 0 && id < saved.order[index - 1]) ? 'questions' : 'original';
     return {
       order: saved.order,
+      setId: sets.some(set => set.id === saved.setId) ? saved.setId : 'all',
+      modeId: modes.some(mode => mode.id === saved.modeId) ? saved.modeId : fallbackMode,
+      choiceOrders: savedChoiceOrders(saved.choiceOrders, saved.order),
       cursor: Number.isInteger(saved.cursor) && saved.cursor >= 0 && saved.cursor < saved.order.length ? saved.cursor : 0,
       selected: cleanAnswers(saved.selected),
       graded: cleanAnswers(saved.graded),
@@ -60,6 +71,10 @@ function readSession() {
 }
 
 let session = readSession();
+
+function choiceOrder(id) {
+  return session.choiceOrders[id] ?? originalChoices;
+}
 
 function persist() {
   try {
@@ -77,7 +92,9 @@ function statusOf(id) {
 function renderChoices(question) {
   const status = statusOf(question.id);
   const checked = status !== 'open';
-  const selected = checked ? session.graded[question.id] : session.selected[question.id];
+  const order = choiceOrder(question.id);
+  const selected = order.indexOf(checked ? session.graded[question.id] : session.selected[question.id]);
+  question = presentQuestion(question, order);
   [...ui.choices.children].slice(1).forEach(node => node.remove());
   question.options.forEach((option, index) => {
     const choice = document.createElement('button');
@@ -174,7 +191,12 @@ function renderResults(counts) {
     retry.className = 'button primary';
     retry.textContent = 'Luyện lại ' + counts.wrong + ' câu sai';
     retry.onclick = () => {
-      session = newSession(session.order.filter(id => statusOf(id) === 'wrong'));
+      session = newSession({
+        setId: session.setId,
+        modeId: session.modeId,
+        order: session.order.filter(id => statusOf(id) === 'wrong'),
+        choiceOrders: session.choiceOrders,
+      });
       ui.filter.value = 'all';
       update(true);
       readAutomatically();
@@ -187,6 +209,11 @@ function renderResults(counts) {
 function render(focus = false) {
   const counts = {right: 0, wrong: 0, open: 0};
   session.order.forEach(id => counts[statusOf(id)]++);
+  const set = sets.find(item => item.id === session.setId);
+  const isReview = session.order.length !== set.end - set.start + 1;
+  ui['current-practice'].textContent = isReview
+    ? 'Ôn ' + session.order.length + ' câu sai'
+    : set.label + (set.id === 'all' ? '' : ' · 27 câu');
   ui['question-card'].hidden = session.view !== 'quiz';
   ui.results.hidden = session.view !== 'results';
   if (session.view === 'quiz') {
@@ -230,10 +257,14 @@ ui.choices.addEventListener('click', event => {
   if (!choice) return;
   const id = session.order[session.cursor];
   if (Object.hasOwn(session.graded, id)) return;
-  const question = byId.get(id);
-  session.graded[id] = Number(choice.dataset.answer);
+  const order = choiceOrder(id);
+  const question = presentQuestion(byId.get(id), order);
+  const position = Number(choice.dataset.answer);
+  session.graded[id] = order[position];
   update();
-  speech.play([answerLine(question)], 'dap-an-' + id);
+  const recordings = order === originalChoices ? undefined
+    : ['dung-' + question.answer, choiceRecording(question, question.answer, order)];
+  speech.play([answerLine(question)], 'dap-an-' + id, recordings);
   ui.next.focus();
 });
 
@@ -305,21 +336,27 @@ ui.map.onclick = event => {
   if (tile) goTo(Number(tile.dataset.position));
 };
 
-ui.reset.onclick = () => {
+const setSelect = ui['practice-set'];
+const modeSelect = ui['practice-mode'];
+for (const set of sets) {
+  const label = set.id === 'all' ? 'Toàn bộ 108 câu' : set.label + ' · Câu ' + set.start + '–' + set.end;
+  setSelect.add(new Option(label, set.id));
+}
+for (const mode of modes) modeSelect.add(new Option(mode.label, mode.id));
+
+function choosePractice() {
   speech.stop();
+  setSelect.value = session.setId;
+  modeSelect.value = session.modeId;
+  ui['reset-warning'].hidden = !Object.keys(session.graded).length && !session.flagged.length;
   ui['reset-dialog'].returnValue = '';
   ui['reset-dialog'].showModal();
-};
+}
+ui.reset.onclick = choosePractice;
+ui['choose-practice'].onclick = choosePractice;
 ui['reset-dialog'].addEventListener('close', () => {
   if (ui['reset-dialog'].returnValue !== 'start') return;
-  const ids = [...byId.keys()];
-  if (ui.shuffle.checked) {
-    for (let index = ids.length - 1; index > 0; index--) {
-      const other = Math.floor(Math.random() * (index + 1));
-      [ids[index], ids[other]] = [ids[other], ids[index]];
-    }
-  }
-  session = newSession(ids);
+  session = newSession(buildPractice(setSelect.value, modeSelect.value));
   ui.filter.value = 'all';
   update(true);
   readAutomatically();

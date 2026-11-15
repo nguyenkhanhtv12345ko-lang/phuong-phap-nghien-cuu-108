@@ -96,24 +96,40 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, re
     if (playback.utterance) synthesis.cancel();
   }
 
-  function playAudio(playback, file) {
-    const source = new URL('./audio/' + file + '.mp3', import.meta.url);
-    source.search = audioVersion;
-    const audio = new Audio(source);
+  function playAudio(playback, files) {
+    function sourceFor(file) {
+      const source = new URL('./audio/' + file + '.mp3', import.meta.url);
+      source.search = audioVersion;
+      return source;
+    }
+    let index = 0;
+    const audio = new Audio(sourceFor(files[index]));
     playback.audio = audio;
-    audio.playbackRate = Number(rate.value);
-    updateVolume();
     function reportFailure() {
       if (active !== playback) return;
       finish(playback);
       showStatus('Không phát được âm thanh. Hãy bấm “Đọc câu hỏi” để thử lại.');
     }
-    audio.addEventListener('ended', () => finish(playback), {once: true});
+    function start() {
+      audio.playbackRate = Number(rate.value);
+      updateVolume();
+      audio.play().catch(reportFailure);
+    }
+    audio.addEventListener('ended', () => {
+      if (active !== playback) return;
+      index++;
+      if (index === files.length) {
+        finish(playback);
+      } else {
+        audio.src = sourceFor(files[index]).href;
+        start();
+      }
+    });
     audio.addEventListener('error', reportFailure, {once: true});
-    audio.play().catch(reportFailure);
+    start();
   }
 
-  function play(texts, file) {
+  function play(texts, file, recordings = [file]) {
     stop();
     showStatus();
     const playback = {file};
@@ -121,7 +137,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, re
     button.textContent = 'Dừng đọc';
     const nativeVoice = voices.get(voice.value);
     if (!nativeVoice) {
-      playAudio(playback, file);
+      playAudio(playback, recordings);
       return;
     }
     const parts = texts.flatMap(splitSpeech);
@@ -129,7 +145,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, re
       || englishVoices.find(item => /^en[-_]US$/i.test(item.lang))
       || englishVoices[0];
     if (!englishVoice && parts.some(part => part.language === 'en')) {
-      playAudio(playback, file);
+      playAudio(playback, recordings);
       return;
     }
     function speakPart(index) {
@@ -155,7 +171,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, re
         if (isGoogleVoice(nativeVoice)) {
           showStatus('Giọng Google tạm thời không phát được. Đang phát giọng tiếng Việt có sẵn.');
         }
-        playAudio(playback, file);
+        playAudio(playback, recordings);
       };
       // Create a new utterance because engines can ignore changes after speak().
       playback.applyVolume = () => {
