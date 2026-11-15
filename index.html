@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=volume">
-  <script type="module" src="./app.js?v=volume"></script>
+  <link rel="stylesheet" href="./style.css?v=question-only">
+  <script type="module" src="./app.js?v=question-only"></script>
 </head>
 <body>
   <header class="top">
@@ -45,6 +45,7 @@
             <input id="speech-volume" type="range" min="0" max="100" step="1" value="100" aria-valuetext="100%">
             <output id="speech-volume-value" for="speech-volume" aria-hidden="true">100%</output>
           </div>
+          <label class="speech-options"><input id="speech-options" type="checkbox" checked> Đọc các phương án A, B, C, D</label>
         </div>
         <section class="shortcuts" aria-labelledby="shortcut-title">
           <h3 id="shortcut-title">Phím tắt</h3>

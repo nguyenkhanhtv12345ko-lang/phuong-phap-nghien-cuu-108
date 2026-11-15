@@ -17,7 +17,7 @@ function loadPreferences() {
   }
 }
 
-export function createSpeechPlayer({button, voice, rate, volume, volumeValue, auto, status, googleStatus}) {
+export function createSpeechPlayer({button, voice, rate, volume, volumeValue, readOptions, auto, status, googleStatus}) {
   const preferences = loadPreferences();
   const synthesis = window.speechSynthesis;
   let voices = new Map();
@@ -29,6 +29,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, au
     volume.valueAsNumber = preferences.volume;
   }
   auto.checked = preferences.auto !== false;
+  readOptions.checked = preferences.readOptions !== false;
 
   function updateVolume() {
     const percent = volume.value + '%';
@@ -74,6 +75,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, au
     try {
       localStorage.setItem(storageKey, JSON.stringify({
         voice: preferredVoice, rate: rate.value, volume: volume.valueAsNumber, auto: auto.checked,
+        readOptions: readOptions.checked,
       }));
     } catch {
       // Settings still work for the current page.
@@ -114,7 +116,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, au
   function play(texts, file) {
     stop();
     showStatus();
-    const playback = {};
+    const playback = {file};
     active = playback;
     button.textContent = 'Dừng đọc';
     const nativeVoice = voices.get(voice.value);
@@ -186,6 +188,10 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, au
     savePreferences();
   });
   auto.addEventListener('change', savePreferences);
+  readOptions.addEventListener('change', () => {
+    if (!readOptions.checked && active?.file.startsWith('cau-')) stop();
+    savePreferences();
+  });
   window.addEventListener('pagehide', stop);
 
   return {

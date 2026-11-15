@@ -1,5 +1,5 @@
 import { questions } from './questions.js';
-import { createSpeechPlayer } from './speech.js?v=volume';
+import { createSpeechPlayer } from './speech.js?v=question-only';
 import { answerLine, questionLines } from './speech-text.js?v=bilingual';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
@@ -12,6 +12,7 @@ const speech = createSpeechPlayer({
   rate: ui['speech-rate'],
   volume: ui['speech-volume'],
   volumeValue: ui['speech-volume-value'],
+  readOptions: ui['speech-options'],
   auto: ui['speech-auto'],
   status: ui['speech-status'],
   googleStatus: ui['google-voice-status'],
@@ -19,7 +20,11 @@ const speech = createSpeechPlayer({
 
 function readQuestion() {
   const question = byId.get(session.order[session.cursor]);
-  speech.play(questionLines(question), 'cau-' + question.id);
+  if (ui['speech-options'].checked) {
+    speech.play(questionLines(question), 'cau-' + question.id);
+  } else {
+    speech.play([question.question], 'de-bai-' + question.id);
+  }
 }
 
 function readAutomatically() {
