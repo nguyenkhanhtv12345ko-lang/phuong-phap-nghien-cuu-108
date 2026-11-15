@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=question-only">
-  <script type="module" src="./app.js?v=read-correct"></script>
+  <link rel="stylesheet" href="./style.css?v=compact-layout">
+  <script type="module" src="./app.js?v=compact-layout"></script>
 </head>
 <body>
   <header class="top">
@@ -20,11 +20,8 @@
     </div>
   </header>
   <main class="shell">
-    <section class="intro">
-      <p class="mode" id="mode">ĐỀ LUYỆN TẬP</p>
-      <h1>Phương pháp<br class="desktop-break"> nghiên cứu khoa học</h1>
-      <p id="intro-detail">108 câu trắc nghiệm · Tiến độ lưu trên trình duyệt</p>
-    </section>
+    <h1 class="sr-only">Ôn tập phương pháp nghiên cứu khoa học</h1>
+    <p class="storage-status" id="storage-status" role="status" hidden>Trình duyệt đang chặn lưu tiến độ.</p>
     <div class="layout">
       <section class="card" id="question-card" aria-label="Câu hỏi hiện tại">
         <div class="card-top">

@@ -60,13 +60,12 @@ function readSession() {
 }
 
 let session = readSession();
-let canSave = true;
 
 function persist() {
   try {
     localStorage.setItem(storageKey, JSON.stringify(session));
   } catch {
-    canSave = false;
+    ui['storage-status'].hidden = false;
   }
 }
 
@@ -188,11 +187,6 @@ function renderResults(counts) {
 function render(focus = false) {
   const counts = {right: 0, wrong: 0, open: 0};
   session.order.forEach(id => counts[statusOf(id)]++);
-  const full = session.order.length === questions.length;
-  ui.mode.textContent = full ? 'ĐỀ LUYỆN TẬP' : 'ÔN LẠI CÂU SAI';
-  ui['intro-detail'].textContent = session.order.length + ' câu trắc nghiệm' + (canSave
-    ? ' · Tiến độ lưu trên trình duyệt'
-    : ' · Trình duyệt đang chặn lưu tiến độ');
   ui['question-card'].hidden = session.view !== 'quiz';
   ui.results.hidden = session.view !== 'results';
   if (session.view === 'quiz') {
