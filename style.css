@@ -33,14 +33,14 @@ h1 { font-size: clamp(1.9rem, 4.8vw, 3.2rem); line-height: 1.12; letter-spacing:
 #question { margin: 21px 0 21px; font-size: clamp(1.22rem, 2.4vw, 1.55rem); letter-spacing: -.023em; line-height: 1.48; overflow-wrap: anywhere; }
 #question:focus, #result-title:focus { outline: none; }
 fieldset { padding: 0; border: 0; margin: 0; min-width: 0; display: grid; gap: 11px; }
-.choice { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; cursor: pointer; border: 1px solid var(--line); border-radius: 13px; padding: 11px 14px; min-height: 58px; font-size: .96rem; line-height: 1.48; overflow-wrap: anywhere; }
+.choice { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; cursor: pointer; border: 1px solid var(--line); border-radius: 13px; padding: 11px 14px; min-height: 58px; font-size: .96rem; line-height: 1.48; overflow-wrap: anywhere; background: #fff; color: inherit; text-align: left; }
 .choice:hover { border-color: #b5a3eb; }
-.choice:has(input:focus-visible) { outline: 3px solid #8b71ee; outline-offset: 3px; }
-.choice:has(input:checked) { background: #f3eeff; border-color: #9478e4; }
+.choice:disabled { opacity: 1; }
+.choice.pending { background: #f3eeff; border-color: #9478e4; }
 .choice.right { color: var(--green); background: #e9f7ef; border-color: #8dc6a8; }
 .choice.wrong { color: var(--red); background: #fff0f3; border-color: #e4a2ae; }
 .letter { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: #eeecf6; font-weight: 700; font-size: .83rem; }
-.choice:has(input:checked) .letter { background: #ded3ff; }
+.choice.pending .letter { background: #ded3ff; }
 .choice.right .letter { background: #ccebd9; }
 .choice.wrong .letter { background: #f9d8df; }
 .choice-state { font-weight: 800; }
@@ -48,6 +48,14 @@ fieldset { padding: 0; border: 0; margin: 0; min-width: 0; display: grid; gap: 1
 .feedback.right { background: #e9f7ef; color: var(--green); }
 .feedback.wrong { background: #fff0f3; color: var(--red); }
 .actions { margin-top: 22px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 9px; }
+.speech-settings { border-top: 1px solid var(--line); margin-top: 17px; padding-top: 12px; }
+.speech-settings summary { color: var(--purple); cursor: pointer; font-size: .88rem; font-weight: 700; width: fit-content; }
+.speech-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(85px, 1fr); gap: 10px; margin-top: 12px; }
+.speech-fields label { display: grid; gap: 5px; font-size: .8rem; color: var(--muted); }
+.speech-fields select { background: #fff; color: #413954; border-color: var(--line); width: 100%; min-height: 37px; font-size: .83rem; }
+.speech-fields .speech-auto { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+.speech-auto input { accent-color: var(--purple); }
+.speech-status { font-size: .85rem; color: var(--muted); margin-bottom: 0; }
 .button { border-radius: 10px; padding: 10px 13px; min-height: 42px; font-size: .85rem; font-weight: 700; text-align: center; border: 1px solid transparent; }
 .quiet, .secondary, .bookmark { background: white; color: #413954; border-color: var(--line); }
 .quiet:hover, .secondary:not(:disabled):hover, .bookmark:hover, .bookmark[aria-pressed=true] { color: var(--purple); background: #f4efff; border-color: #d8caf8; }
@@ -92,4 +100,4 @@ dialog p { font-size: .9rem; color: var(--muted); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 @media (max-width: 860px) { .layout { grid-template-columns: minmax(0,1fr) 292px; gap: 14px; } .card, .sidebar { padding: 19px; } }
 @media (max-width: 690px) { .top-inner { padding-inline: 15px; } .shell { padding: 19px 13px 30px; } .intro { padding: 20px; margin-bottom: 15px; } .desktop-break { display: initial; } .layout { grid-template-columns: minmax(0,1fr); } .card, .sidebar { padding: 15px; border-radius: 17px; } .choice { padding-inline: 10px; } .actions .button { padding-inline: 9px; } #map { grid-template-columns: repeat(9,minmax(0,1fr)); } }
-@media (max-width: 360px) { .actions { display: grid; grid-template-columns: 1fr 1fr; } #check { grid-row: 1; grid-column: 1 / -1; } }
+@media (max-width: 360px) { .actions { display: grid; grid-template-columns: 1fr 1fr; } #read-question { grid-row: 1; grid-column: 1 / -1; } }

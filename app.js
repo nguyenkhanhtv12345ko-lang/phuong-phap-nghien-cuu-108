@@ -1,9 +1,28 @@
 import { questions } from './questions.js';
+import { createSpeechPlayer } from './speech.js';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
 const byId = new Map(questions.map(question => [question.id, question]));
 const labels = 'ABCD';
 const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map(node => [node.id, node]));
+const speech = createSpeechPlayer({
+  button: ui['read-question'],
+  voice: ui['speech-voice'],
+  rate: ui['speech-rate'],
+  auto: ui['speech-auto'],
+  status: ui['speech-status'],
+});
+
+function readQuestion() {
+  const question = byId.get(session.order[session.cursor]);
+  const options = question.options.map((text, index) => 'Phương án ' + labels[index] + '. ' + text);
+  speech.play([question.question, ...options], 'cau-' + question.id);
+}
+
+function readAutomatically() {
+  if (speech.automatic()) readQuestion();
+  else speech.stop();
+}
 
 function newSession(order = [...byId.keys()]) {
   return { order, cursor: 0, selected: {}, graded: {}, flagged: [], view: 'quiz' };
@@ -54,39 +73,34 @@ function renderChoices(question) {
   const selected = checked ? session.graded[question.id] : session.selected[question.id];
   [...ui.choices.children].slice(1).forEach(node => node.remove());
   question.options.forEach((option, index) => {
-    const label = document.createElement('label');
-    label.className = 'choice';
-    const radio = document.createElement('input');
-    radio.type = 'radio';
-    radio.name = 'answer';
-    radio.value = index;
-    radio.className = 'sr-only';
-    radio.checked = index === selected;
-    radio.disabled = checked;
+    const choice = document.createElement('button');
+    choice.type = 'button';
+    choice.className = 'choice';
+    choice.dataset.answer = index;
+    choice.disabled = checked;
+    if (!checked && index === selected) choice.classList.add('pending');
     const letter = document.createElement('span');
     letter.className = 'letter';
     letter.textContent = labels[index];
     const text = document.createElement('span');
     text.textContent = option;
-    label.append(radio, letter, text);
+    choice.append(letter, text);
     if (checked && (index === question.answer || index === selected)) {
       const isCorrect = index === question.answer;
-      label.classList.add(isCorrect ? 'right' : 'wrong');
+      choice.classList.add(isCorrect ? 'right' : 'wrong');
       const mark = document.createElement('span');
       mark.className = 'choice-state';
       mark.textContent = isCorrect ? '✓' : '×';
       mark.setAttribute('aria-label', isCorrect ? 'Đáp án đúng' : 'Đáp án sai');
-      label.append(mark);
+      choice.append(mark);
     }
-    ui.choices.append(label);
+    ui.choices.append(choice);
   });
   ui.feedback.hidden = !checked;
   ui.feedback.className = 'feedback ' + status;
   ui.feedback.textContent = checked
-    ? (status === 'right' ? 'Chính xác! ' : 'Chưa đúng. ') + 'Đáp án đúng là ' + labels[question.answer] + '.'
+    ? (status === 'right' ? 'Chính xác! ' : 'Chưa đúng. ') + 'Đáp án đúng là ' + labels[question.answer] + '. ' + question.options[question.answer]
     : '';
-  ui.check.disabled = checked || selected === undefined;
-  ui.check.textContent = checked ? 'Đã chấm câu này' : 'Kiểm tra đáp án';
 }
 
 function renderProgress(counts) {
@@ -155,6 +169,7 @@ function renderResults(counts) {
       session = newSession(session.order.filter(id => statusOf(id) === 'wrong'));
       ui.filter.value = 'all';
       update(true);
+      readAutomatically();
     };
     actions.append(retry);
   }
@@ -198,28 +213,36 @@ function goTo(position) {
   session.cursor = position;
   session.view = 'quiz';
   update(true);
+  readAutomatically();
 }
 
 function showResults() {
+  speech.stop();
   session.view = 'results';
   update(true);
 }
 
-ui.choices.addEventListener('change', event => {
-  if (event.target.name !== 'answer') return;
-  session.selected[session.order[session.cursor]] = Number(event.target.value);
-  persist();
-  ui.check.disabled = false;
-});
-
-ui['answer-form'].addEventListener('submit', event => {
-  event.preventDefault();
+ui.choices.addEventListener('click', event => {
+  const choice = event.target.closest('button[data-answer]');
+  if (!choice) return;
   const id = session.order[session.cursor];
-  if (Object.hasOwn(session.graded, id) || session.selected[id] === undefined) return;
-  session.graded[id] = session.selected[id];
+  if (Object.hasOwn(session.graded, id)) return;
+  const question = byId.get(id);
+  session.graded[id] = Number(choice.dataset.answer);
   update();
+  if (session.graded[id] !== question.answer) {
+    const letter = labels[question.answer];
+    speech.play(['Đáp án đúng là ' + letter + '. ' + question.options[question.answer]], 'dap-an-' + id);
+  } else {
+    speech.stop();
+  }
   ui.next.focus();
 });
+
+ui['read-question'].onclick = () => {
+  if (speech.playing()) speech.stop();
+  else readQuestion();
+};
 
 ui.previous.onclick = () => { if (session.cursor > 0) goTo(session.cursor - 1); };
 ui.next.onclick = () => {
@@ -247,6 +270,7 @@ ui.map.onclick = event => {
 };
 
 ui.reset.onclick = () => {
+  speech.stop();
   ui['reset-dialog'].returnValue = '';
   ui['reset-dialog'].showModal();
 };
@@ -262,6 +286,7 @@ ui['reset-dialog'].addEventListener('close', () => {
   session = newSession(ids);
   ui.filter.value = 'all';
   update(true);
+  readAutomatically();
 });
 
 render();
