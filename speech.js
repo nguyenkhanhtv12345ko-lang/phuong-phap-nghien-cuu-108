@@ -1,5 +1,10 @@
 const storageKey = 'ppnckh-giong-doc-v1';
 const builtIn = 'built-in';
+const googleLabel = 'Google Tiếng Việt';
+
+function isGoogleVoice(voice) {
+  return /\bGoogle\b/i.test(voice.name) || /\bcom\.google\.android\.tts\b/i.test(voice.voiceURI);
+}
 
 function loadPreferences() {
   try {
@@ -9,7 +14,7 @@ function loadPreferences() {
   }
 }
 
-export function createSpeechPlayer({button, voice, rate, auto, status}) {
+export function createSpeechPlayer({button, voice, rate, auto, status, googleStatus}) {
   const preferences = loadPreferences();
   const synthesis = window.speechSynthesis;
   let voices = new Map();
@@ -27,7 +32,22 @@ export function createSpeechPlayer({button, voice, rate, auto, status}) {
     const vietnamese = synthesis?.getVoices().filter(item => /^vi(?:[-_]|$)/i.test(item.lang)) ?? [];
     voices = new Map(vietnamese.map(item => [item.voiceURI, item]));
     voice.replaceChildren(new Option('Tiếng Việt có sẵn', builtIn));
-    for (const [id, item] of voices) voice.add(new Option(item.name, id));
+    const googleVoices = [...voices.values()].filter(isGoogleVoice);
+    for (const item of googleVoices) {
+      const label = googleVoices.length === 1 ? googleLabel : googleLabel + ' · ' + item.name;
+      voice.add(new Option(label, item.voiceURI));
+    }
+    if (!googleVoices.length) {
+      const unavailable = new Option(googleLabel, '');
+      unavailable.disabled = true;
+      voice.add(unavailable);
+    }
+    for (const [id, item] of voices) {
+      if (!isGoogleVoice(item)) voice.add(new Option(item.name, id));
+    }
+    googleStatus.hidden = googleVoices.length > 0;
+    if (googleStatus.hidden) voice.removeAttribute('aria-describedby');
+    else voice.setAttribute('aria-describedby', googleStatus.id);
     voice.value = voices.has(preferredVoice) ? preferredVoice : builtIn;
   }
 
@@ -93,6 +113,9 @@ export function createSpeechPlayer({button, voice, rate, auto, status}) {
       line.onerror = () => {
         if (active !== playback) return;
         playback.utterance = null;
+        if (isGoogleVoice(nativeVoice)) {
+          showStatus('Giọng Google tạm thời không phát được. Đang phát giọng tiếng Việt có sẵn.');
+        }
         playAudio(playback, file);
       };
       synthesis.speak(line);

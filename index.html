@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.js"></script>
+  <link rel="stylesheet" href="./style.css?v=google-voice">
+  <script type="module" src="./app.js?v=google-voice"></script>
 </head>
 <body>
   <header class="top">
@@ -44,7 +44,7 @@
         <details class="speech-settings">
           <summary>Giọng đọc và tốc độ</summary>
           <div class="speech-fields">
-            <label>Giọng tiếng Việt<select id="speech-voice"></select></label>
+            <label>Giọng tiếng Việt<select id="speech-voice" aria-describedby="google-voice-status"></select></label>
             <label>Tốc độ đọc
               <select id="speech-rate">
                 <option value="0.75">0,75×</option>
@@ -56,6 +56,7 @@
               </select>
             </label>
             <label class="speech-auto"><input id="speech-auto" type="checkbox" checked> Tự đọc khi chuyển câu</label>
+            <p class="google-voice-status" id="google-voice-status" hidden>Trình duyệt này chưa cung cấp giọng Google Tiếng Việt. Bạn có thể dùng giọng tiếng Việt có sẵn.</p>
           </div>
         </details>
         <p class="speech-status" id="speech-status" role="status" hidden></p>

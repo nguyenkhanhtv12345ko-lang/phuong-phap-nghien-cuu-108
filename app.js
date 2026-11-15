@@ -1,5 +1,5 @@
 import { questions } from './questions.js';
-import { createSpeechPlayer } from './speech.js';
+import { createSpeechPlayer } from './speech.js?v=google-voice';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
 const byId = new Map(questions.map(question => [question.id, question]));
@@ -11,6 +11,7 @@ const speech = createSpeechPlayer({
   rate: ui['speech-rate'],
   auto: ui['speech-auto'],
   status: ui['speech-status'],
+  googleStatus: ui['google-voice-status'],
 });
 
 function readQuestion() {

@@ -55,6 +55,7 @@ fieldset { padding: 0; border: 0; margin: 0; min-width: 0; display: grid; gap: 1
 .speech-fields select { background: #fff; color: #413954; border-color: var(--line); width: 100%; min-height: 37px; font-size: .83rem; }
 .speech-fields .speech-auto { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
 .speech-auto input { accent-color: var(--purple); }
+.google-voice-status { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
 .speech-status { font-size: .85rem; color: var(--muted); margin-bottom: 0; }
 .button { border-radius: 10px; padding: 10px 13px; min-height: 42px; font-size: .85rem; font-weight: 700; text-align: center; border: 1px solid transparent; }
 .quiet, .secondary, .bookmark { background: white; color: #413954; border-color: var(--line); }
