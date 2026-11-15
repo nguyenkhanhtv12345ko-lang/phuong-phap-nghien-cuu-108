@@ -3,7 +3,7 @@ import { splitSpeech } from './speech-text.js?v=bilingual';
 const storageKey = 'ppnckh-giong-doc-v1';
 const builtIn = 'built-in';
 const googleLabel = 'Google Tiếng Việt';
-const audioVersion = new URL(import.meta.url).search;
+const audioVersion = '?v=bilingual';
 
 function isGoogleVoice(voice) {
   return /\bGoogle\b/i.test(voice.name) || /\bcom\.google\.android\.tts\b/i.test(voice.voiceURI);
@@ -17,7 +17,7 @@ function loadPreferences() {
   }
 }
 
-export function createSpeechPlayer({button, voice, rate, auto, status, googleStatus}) {
+export function createSpeechPlayer({button, voice, rate, volume, volumeValue, auto, status, googleStatus}) {
   const preferences = loadPreferences();
   const synthesis = window.speechSynthesis;
   let voices = new Map();
@@ -25,7 +25,20 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
   let active = null;
   let preferredVoice = preferences.voice ?? builtIn;
   if ([...rate.options].some(option => option.value === preferences.rate)) rate.value = preferences.rate;
+  if (Number.isInteger(preferences.volume) && preferences.volume >= 0 && preferences.volume <= 100) {
+    volume.valueAsNumber = preferences.volume;
+  }
   auto.checked = preferences.auto !== false;
+
+  function updateVolume() {
+    const percent = volume.value + '%';
+    volumeValue.textContent = percent;
+    volume.setAttribute('aria-valuetext', percent);
+    if (active?.audio) {
+      active.audio.volume = volume.valueAsNumber / 100;
+      active.audio.muted = volume.valueAsNumber === 0;
+    }
+  }
 
   function showStatus(message = '') {
     status.hidden = !message;
@@ -59,7 +72,9 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
 
   function savePreferences() {
     try {
-      localStorage.setItem(storageKey, JSON.stringify({voice: preferredVoice, rate: rate.value, auto: auto.checked}));
+      localStorage.setItem(storageKey, JSON.stringify({
+        voice: preferredVoice, rate: rate.value, volume: volume.valueAsNumber, auto: auto.checked,
+      }));
     } catch {
       // Settings still work for the current page.
     }
@@ -85,6 +100,7 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
     const audio = new Audio(source);
     playback.audio = audio;
     audio.playbackRate = Number(rate.value);
+    updateVolume();
     function reportFailure() {
       if (active !== playback) return;
       finish(playback);
@@ -127,14 +143,24 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
       line.lang = partVoice.lang;
       line.voice = partVoice;
       line.rate = Number(rate.value);
-      line.onend = () => speakPart(index + 1);
+      line.volume = volume.valueAsNumber / 100;
+      line.onend = () => {
+        if (playback.utterance === line) speakPart(index + 1);
+      };
       line.onerror = () => {
-        if (active !== playback) return;
+        if (active !== playback || playback.utterance !== line) return;
         playback.utterance = null;
         if (isGoogleVoice(nativeVoice)) {
           showStatus('Giọng Google tạm thời không phát được. Đang phát giọng tiếng Việt có sẵn.');
         }
         playAudio(playback, file);
+      };
+      // Create a new utterance because engines can ignore changes after speak().
+      playback.applyVolume = () => {
+        if (playback.utterance !== line || line.volume === volume.valueAsNumber / 100) return;
+        playback.utterance = null;
+        synthesis.cancel();
+        speakPart(index);
       };
       synthesis.speak(line);
     }
@@ -142,6 +168,7 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
   }
 
   refreshVoices();
+  updateVolume();
   synthesis?.addEventListener('voiceschanged', refreshVoices);
   voice.addEventListener('change', () => {
     preferredVoice = voice.value;
@@ -150,6 +177,12 @@ export function createSpeechPlayer({button, voice, rate, auto, status, googleSta
   });
   rate.addEventListener('change', () => {
     if (active?.audio) active.audio.playbackRate = Number(rate.value);
+    savePreferences();
+  });
+  volume.addEventListener('input', updateVolume);
+  volume.addEventListener('change', () => {
+    updateVolume();
+    active?.applyVolume?.();
     savePreferences();
   });
   auto.addEventListener('change', savePreferences);

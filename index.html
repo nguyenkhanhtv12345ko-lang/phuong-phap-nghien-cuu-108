@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=keyboard">
-  <script type="module" src="./app.js?v=keyboard"></script>
+  <link rel="stylesheet" href="./style.css?v=volume">
+  <script type="module" src="./app.js?v=volume"></script>
 </head>
 <body>
   <header class="top">
@@ -39,6 +39,11 @@
             <button type="button" class="button secondary" id="previous" aria-keyshortcuts="ArrowLeft">← Câu trước</button>
             <button type="button" class="button secondary" id="read-question" aria-keyshortcuts="Space">Đọc câu hỏi</button>
             <button type="button" class="button secondary" id="next" aria-keyshortcuts="ArrowRight">Câu sau →</button>
+          </div>
+          <div class="speech-volume">
+            <label for="speech-volume">Âm lượng đọc</label>
+            <input id="speech-volume" type="range" min="0" max="100" step="1" value="100" aria-valuetext="100%">
+            <output id="speech-volume-value" for="speech-volume" aria-hidden="true">100%</output>
           </div>
         </div>
         <section class="shortcuts" aria-labelledby="shortcut-title">

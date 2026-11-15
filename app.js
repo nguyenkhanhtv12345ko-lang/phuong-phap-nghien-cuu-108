@@ -1,5 +1,5 @@
 import { questions } from './questions.js';
-import { createSpeechPlayer } from './speech.js?v=bilingual';
+import { createSpeechPlayer } from './speech.js?v=volume';
 import { answerLine, questionLines } from './speech-text.js?v=bilingual';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
@@ -10,6 +10,8 @@ const speech = createSpeechPlayer({
   button: ui['read-question'],
   voice: ui['speech-voice'],
   rate: ui['speech-rate'],
+  volume: ui['speech-volume'],
+  volumeValue: ui['speech-volume-value'],
   auto: ui['speech-auto'],
   status: ui['speech-status'],
   googleStatus: ui['google-voice-status'],
