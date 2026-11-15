@@ -79,6 +79,7 @@ function renderChoices(question) {
     choice.className = 'choice';
     choice.dataset.answer = index;
     choice.disabled = checked;
+    choice.setAttribute('aria-keyshortcuts', labels[index]);
     if (!checked && index === selected) choice.classList.add('pending');
     const letter = document.createElement('span');
     letter.className = 'letter';
@@ -250,6 +251,44 @@ ui.next.onclick = () => {
   else goTo(session.cursor + 1);
 };
 ui.finish.onclick = showResults;
+
+document.addEventListener('keydown', event => {
+  const target = event.target;
+  if (session.view !== 'quiz' || ui['reset-dialog'].open || event.defaultPrevented ||
+      event.isComposing || event.ctrlKey || event.altKey || event.metaKey ||
+      target.closest?.('input, select, textarea, summary, [contenteditable]:not([contenteditable=false])')) return;
+
+  const {key} = event;
+  if (key === ' ') {
+    event.preventDefault();
+    if (!event.repeat) ui['read-question'].click();
+    return;
+  }
+  if (key === 'ArrowLeft' || key === 'ArrowRight') {
+    event.preventDefault();
+    const position = session.cursor + (key === 'ArrowLeft' ? -1 : 1);
+    if (!event.repeat && position >= 0 && position < session.order.length) goTo(position);
+    return;
+  }
+  if (key === 'Enter') {
+    const option = target.closest?.('button[data-answer]:enabled');
+    if (event.repeat || option) event.preventDefault();
+    if (!event.repeat) option?.click();
+    return;
+  }
+
+  const options = [...ui.choices.querySelectorAll('button[data-answer]:enabled')];
+  if (!options.length) return;
+  if (/^[a-d]$/i.test(key)) {
+    event.preventDefault();
+    options[labels.indexOf(key.toUpperCase())].focus();
+  } else if (key === 'ArrowUp' || key === 'ArrowDown') {
+    event.preventDefault();
+    const current = options.indexOf(document.activeElement);
+    const next = key === 'ArrowDown' ? current + 1 : (current === -1 ? options.length - 1 : current - 1);
+    options[(next + options.length) % options.length].focus();
+  }
+});
 
 ui.bookmark.onclick = () => {
   const id = session.order[session.cursor];
