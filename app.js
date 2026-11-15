@@ -239,11 +239,7 @@ ui.choices.addEventListener('click', event => {
   const question = byId.get(id);
   session.graded[id] = Number(choice.dataset.answer);
   update();
-  if (session.graded[id] !== question.answer) {
-    speech.play([answerLine(question)], 'dap-an-' + id);
-  } else {
-    speech.stop();
-  }
+  speech.play([answerLine(question)], 'dap-an-' + id);
   ui.next.focus();
 });
 
