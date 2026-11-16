@@ -1,10 +1,11 @@
 import { questions } from './questions.js';
+import { chapterQuestions } from './chapter-questions.js?v=chapter-quiz';
 import { createSpeechPlayer } from './speech.js?v=practice-menu';
-import { answerLine, questionLines } from './speech-text.js?v=bilingual';
-import { buildPractice, choiceRecording, labels, modes, originalChoices, presentQuestion, savedChoiceOrders, sets } from './practice.js?v=practice-menu';
+import { answerLine, multipleAnswersLine, questionLines } from './speech-text.js?v=chapter-quiz';
+import { buildPractice, choiceRecording, correctPositions, labels, modes, originalChoices, presentQuestion, savedChoiceOrders, sets } from './practice.js?v=chapter-quiz';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
-const byId = new Map(questions.map(question => [question.id, question]));
+const byId = new Map([...questions, ...chapterQuestions].map(question => [question.id, question]));
 const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map(node => [node.id, node]));
 const speech = createSpeechPlayer({
   button: ui['read-question'],
@@ -96,7 +97,7 @@ function persist() {
 
 function statusOf(id) {
   if (!Object.hasOwn(session.graded, id)) return 'open';
-  return session.graded[id] === byId.get(id).answer ? 'right' : 'wrong';
+  return correctPositions(byId.get(id)).includes(session.graded[id]) ? 'right' : 'wrong';
 }
 
 function wrongQuestions() {
@@ -143,6 +144,7 @@ function renderChoices(question) {
   const order = choiceOrder(question.id);
   const selected = order.indexOf(checked ? session.graded[question.id] : session.selected[question.id]);
   question = presentQuestion(question, order);
+  const correct = correctPositions(question);
   [...ui.choices.children].slice(1).forEach(node => node.remove());
   question.options.forEach((option, index) => {
     const choice = document.createElement('button');
@@ -158,8 +160,8 @@ function renderChoices(question) {
     const text = document.createElement('span');
     text.textContent = option;
     choice.append(letter, text);
-    if (checked && (index === question.answer || index === selected)) {
-      const isCorrect = index === question.answer;
+    const isCorrect = correct.includes(index);
+    if (checked && (isCorrect || index === selected)) {
       choice.classList.add(isCorrect ? 'right' : 'wrong');
       const mark = document.createElement('span');
       mark.className = 'choice-state';
@@ -171,9 +173,30 @@ function renderChoices(question) {
   });
   ui.feedback.hidden = !checked;
   ui.feedback.className = 'feedback ' + status;
-  ui.feedback.textContent = checked
-    ? (status === 'right' ? 'Chính xác! ' : 'Chưa đúng. ') + 'Đáp án đúng là ' + labels[question.answer] + '. ' + question.options[question.answer]
-    : '';
+  ui.feedback.textContent = '';
+  if (checked) {
+    const verdict = status === 'right' ? 'Chính xác! ' : 'Chưa đúng. ';
+    const answer = correct.length > 1
+      ? correct.map(position => labels[position]).join(' hoặc ') + '.'
+      : labels[question.answer] + '. ' + question.options[question.answer];
+    ui.feedback.textContent = verdict + 'Đáp án đúng là ' + answer + (question.answerNote ? ' ' + question.answerNote : '');
+  }
+}
+
+function readAnswer(question, order) {
+  const correct = correctPositions(question);
+  if (correct.length > 1) {
+    const optionLines = questionLines(question).slice(1);
+    const lines = [multipleAnswersLine, ...correct.map(position => optionLines[position])];
+    const recordings = ['dap-an-nhieu', ...correct.flatMap(position => [
+      'nhan-' + position, choiceRecording(question, position, order),
+    ])];
+    speech.play(lines, recordings[0], recordings);
+    return;
+  }
+  const recordings = order === originalChoices ? undefined
+    : ['dung-' + question.answer, choiceRecording(question, question.answer, order)];
+  speech.play([answerLine(question)], 'dap-an-' + question.id, recordings);
 }
 
 function renderProgress(counts) {
@@ -255,10 +278,11 @@ function render(focus = false) {
   const counts = {right: 0, wrong: 0, open: 0};
   session.order.forEach(id => counts[statusOf(id)]++);
   const set = sets.find(item => item.id === session.setId);
-  const isReview = session.resume || session.order.length !== set.end - set.start + 1;
+  const total = set.end - set.start + 1;
+  const isReview = session.resume || session.order.length !== total;
   ui['current-practice'].textContent = isReview
     ? 'Ôn ' + session.order.length + ' câu sai'
-    : set.label + (set.id === 'all' ? '' : ' · 27 câu');
+    : set.label + (set.id === 'all' ? '' : ' · ' + total + ' câu');
   ui['question-card'].hidden = session.view !== 'quiz';
   ui.results.hidden = session.view !== 'results';
   if (session.view === 'quiz') {
@@ -307,9 +331,7 @@ ui.choices.addEventListener('click', event => {
   const position = Number(choice.dataset.answer);
   session.graded[id] = order[position];
   update();
-  const recordings = order === originalChoices ? undefined
-    : ['dung-' + question.answer, choiceRecording(question, question.answer, order)];
-  speech.play([answerLine(question)], 'dap-an-' + id, recordings);
+  readAnswer(question, order);
   ui.next.focus();
 });
 
@@ -384,7 +406,9 @@ ui.map.onclick = event => {
 const setSelect = ui['practice-set'];
 const modeSelect = ui['practice-mode'];
 for (const set of sets) {
-  const label = set.id === 'all' ? 'Toàn bộ 108 câu' : set.label + ' · Câu ' + set.start + '–' + set.end;
+  let label = set.label + ' · Câu ' + set.start + '–' + set.end;
+  if (set.id === 'all') label = 'Toàn bộ ' + set.label;
+  if (set.id === 'chapter') label = set.label + ' · ' + (set.end - set.start + 1) + ' câu';
   setSelect.add(new Option(label, set.id));
 }
 for (const mode of modes) modeSelect.add(new Option(mode.label, mode.id));

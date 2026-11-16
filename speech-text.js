@@ -14,7 +14,8 @@ const englishTerms = [
   'Mean', 'Median', 'Variance, Standard Deviation', 'Quartiles',
   'Paraphrasing', 'Self-plagiarism', 'Copyright Infringement',
   'BibTeX', 'LaTeX', 'VS Code', 'Overleaf', 'TeXworks', 'MiKTeX', 'Visual Studio', 'Google Docs',
-  'Word', 'logic', 'camera',
+  'Google Scholar', 'Chronological Review', 'Microsoft Word', 'block equation',
+  'Word', 'logic', 'camera', 'code', 'web',
 ];
 const pronunciations = new Map([
   ['AI', 'A I'], ['API', 'A P I'], ['CPU', 'C P U'], ['SQ3R', 'S Q three R'],
@@ -38,6 +39,8 @@ export function questionLines(question) {
 export function answerLine(question) {
   return 'Đáp án đúng là ' + spokenLabels[question.answer] + '. ' + question.options[question.answer];
 }
+
+export const multipleAnswersLine = 'Có hai phương án đúng.';
 
 export function splitSpeech(line) {
   const segments = [];

@@ -7,10 +7,11 @@ export const sets = [
   {id: '2', label: 'Đề 2', start: 28, end: 54},
   {id: '3', label: 'Đề 3', start: 55, end: 81},
   {id: '4', label: 'Đề 4', start: 82, end: 108},
+  {id: 'chapter', label: 'Ôn tập cuối chương', start: 109, end: 139},
 ];
 
 export const modes = [
-  {id: 'original', label: 'Nguyên bản theo Word'},
+  {id: 'original', label: 'Nguyên bản theo tài liệu'},
   {id: 'questions', label: 'Chỉ đảo câu hỏi'},
   {id: 'choices', label: 'Chỉ đảo phương án trả lời'},
   {id: 'both', label: 'Đảo câu hỏi và phương án'},
@@ -49,6 +50,10 @@ export function savedChoiceOrders(data, order) {
 
 const choiceReference = /^([A-D]) và ([A-D]) đều (đúng|sai)$/u;
 
+export function correctPositions(question) {
+  return question.acceptedAnswers ?? [question.answer];
+}
+
 export function presentQuestion(question, order) {
   if (order === originalChoices) return question;
   const options = order.map(index => {
@@ -58,7 +63,11 @@ export function presentQuestion(question, order) {
       return labels[mapped[0]] + ' và ' + labels[mapped[1]] + ' đều ' + verdict;
     });
   });
-  return {...question, options, answer: order.indexOf(question.answer)};
+  const shown = {...question, options, answer: order.indexOf(question.answer)};
+  if (question.acceptedAnswers) {
+    shown.acceptedAnswers = question.acceptedAnswers.map(index => order.indexOf(index)).sort((a, b) => a - b);
+  }
+  return shown;
 }
 
 export function choiceRecording(question, position, order) {
