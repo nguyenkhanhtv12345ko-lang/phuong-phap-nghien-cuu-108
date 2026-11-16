@@ -4,6 +4,7 @@ const storageKey = 'ppnckh-giong-doc-v1';
 const builtIn = 'built-in';
 const googleLabel = 'Google Tiếng Việt';
 const audioVersion = '?v=bilingual';
+const correctedAudio = /^(?:cau|de-bai|dap-an|phuong-an)-(?:95|108)(?:-[0-3])?$/;
 
 function isGoogleVoice(voice) {
   return /\bGoogle\b/i.test(voice.name) || /\bcom\.google\.android\.tts\b/i.test(voice.voiceURI);
@@ -99,7 +100,7 @@ export function createSpeechPlayer({button, voice, rate, volume, volumeValue, re
   function playAudio(playback, files) {
     function sourceFor(file) {
       const source = new URL('./audio/' + file + '.mp3', import.meta.url);
-      source.search = audioVersion;
+      source.search = correctedAudio.test(file) ? '?v=corrected-questions' : audioVersion;
       return source;
     }
     let index = 0;

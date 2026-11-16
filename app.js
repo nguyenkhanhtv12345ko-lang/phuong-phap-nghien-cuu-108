@@ -1,10 +1,12 @@
-import { questions } from './questions.js';
+import { questions } from './questions.js?v=corrected-questions';
 import { chapterQuestions } from './chapter-questions.js?v=chapter-quiz';
-import { createSpeechPlayer } from './speech.js?v=chapter-quiz';
+import { createSpeechPlayer } from './speech.js?v=corrected-questions';
 import { answerLine, multipleAnswersLine, questionLines } from './speech-text.js?v=chapter-quiz';
 import { buildPractice, choiceRecording, correctPositions, labels, modes, originalChoices, presentQuestion, savedChoiceOrders, sets } from './practice.js?v=chapter-quiz';
 
 const storageKey = 'ppnckh-luot-luyen-v1';
+const answerVersion = 1;
+const correctedQuestionIds = new Set([95, 108]);
 const byId = new Map([...questions, ...chapterQuestions].map(question => [question.id, question]));
 const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map(node => [node.id, node]));
 const speech = createSpeechPlayer({
@@ -41,7 +43,7 @@ function readAutomatically() {
 }
 
 function newSession(practice = buildPractice('all', 'original')) {
-  return { ...practice, cursor: 0, selected: {}, graded: {}, flagged: [], view: 'quiz' };
+  return { ...practice, answerVersion, cursor: 0, selected: {}, graded: {}, flagged: [], view: 'quiz' };
 }
 
 function restoreSession(saved) {
@@ -49,11 +51,14 @@ function restoreSession(saved) {
       new Set(saved.order).size !== saved.order.length || !saved.order.every(id => byId.has(id))) {
     return null;
   }
-  const cleanAnswers = answers => Object.fromEntries(saved.order.flatMap(id => (
+  const answerableIds = saved.answerVersion === answerVersion
+    ? saved.order : saved.order.filter(id => !correctedQuestionIds.has(id));
+  const cleanAnswers = answers => Object.fromEntries(answerableIds.flatMap(id => (
     Number.isInteger(answers?.[id]) && answers[id] >= 0 && answers[id] < 4 ? [[id, answers[id]]] : []
   )));
   const fallbackMode = saved.order.some((id, index) => index > 0 && id < saved.order[index - 1]) ? 'questions' : 'original';
   return {
+    answerVersion,
     order: saved.order,
     setId: sets.some(set => set.id === saved.setId) ? saved.setId : 'all',
     modeId: modes.some(mode => mode.id === saved.modeId) ? saved.modeId : fallbackMode,

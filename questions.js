@@ -1035,12 +1035,12 @@ export const questions = [
   },
   {
     "id": 95,
-    "question": "[…] hoặc chứa những câu văn mơ hồ, không rõ […].",
+    "question": "“Đảm bảo bài viết không mang tính chủ quan hoặc chứa những câu văn mơ hồ không rõ ràng” sẽ giúp ích gì cho bài viết?",
     "options": [
-      "Loại bỏ nhận định chủ quan và diễn đạt lại các câu mơ hồ cho rõ nghĩa.",
-      "Giữ nguyên mọi nhận định chủ quan trong bài.",
-      "Thêm các câu văn mơ hồ để tăng độ dài.",
-      "Chỉ thay đổi kiểu chữ và cỡ chữ của văn bản."
+      "Đảm bảo tính học thuật và chuẩn mực viết",
+      "Kiểm tra và chỉnh sửa ngữ pháp, chính tả",
+      "Cải thiện chất lượng nội dung",
+      "Kiểm tra tính chính xác của số liệu và trích dẫn"
     ],
     "answer": 0
   },
@@ -1181,10 +1181,10 @@ export const questions = [
     "question": "Nội dung nào thể hiện đúng về biên tập và sửa lỗi?",
     "options": [
       "Là cách ghi nguồn để đảm bảo minh bạch và tránh đạo văn.",
-      "Rà soát và sửa lỗi chính tả, ngữ pháp, dấu câu và cách diễn đạt để bài viết rõ ràng, nhất quán.",
-      "Thêm nội dung mới để tăng số trang mà không cần kiểm tra lại.",
-      "Giữ nguyên các lỗi trong bản thảo để bảo toàn cách viết ban đầu."
+      "Giúp cải tiến nội dung và tăng giá trị nghiên cứu",
+      "Giúp nâng cao chất lượng học thuật và phát hiện sai sót",
+      "Mang tính chính xác, mạch lạc, trang trọng và súc tích"
     ],
-    "answer": 1
+    "answer": 2
   }
 ];
