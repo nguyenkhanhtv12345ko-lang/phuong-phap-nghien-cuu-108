@@ -1,6 +1,6 @@
 import { questions } from './questions.js';
 import { chapterQuestions } from './chapter-questions.js?v=chapter-quiz';
-import { createSpeechPlayer } from './speech.js?v=practice-menu';
+import { createSpeechPlayer } from './speech.js?v=chapter-quiz';
 import { answerLine, multipleAnswersLine, questionLines } from './speech-text.js?v=chapter-quiz';
 import { buildPractice, choiceRecording, correctPositions, labels, modes, originalChoices, presentQuestion, savedChoiceOrders, sets } from './practice.js?v=chapter-quiz';
 

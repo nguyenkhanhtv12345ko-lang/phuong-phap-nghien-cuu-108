@@ -1,4 +1,4 @@
-import { splitSpeech } from './speech-text.js?v=bilingual';
+import { splitSpeech } from './speech-text.js?v=chapter-quiz';
 
 const storageKey = 'ppnckh-giong-doc-v1';
 const builtIn = 'built-in';
